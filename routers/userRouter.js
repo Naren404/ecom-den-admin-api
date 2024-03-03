@@ -2,11 +2,13 @@ import express from "express";
 import { v4 as uuidv4 } from 'uuid';
 
 import { newUserValidation } from "../middlewares/validationMiddleware/userValidation.js";
-import { hashPassword } from "../utility/bcryptHelper.js";
-import { createUser, updateUser } from "../models/user/userModel.js";
+import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
+import { createUser, findUserByEmail, updateUser } from "../models/user/userModel.js";
 import { createSession, deleteSession } from "../models/session/sessionModel.js";
 import { sendAccountVerifiedEmail, sendVerificationLinkEmail } from "../utility/nodemailerHelper.js";
 import { buildErrorResponse, buildSuccessResponse } from "../utility/responseHelper.js";
+import { generateJWTs } from "../utility/jwtHelper.js";
+import { adminAuth, refreshAuth } from "../middlewares/authMiddleware/authMiddleware.js";
 
 
 const userRouter = express.Router();
@@ -81,5 +83,53 @@ userRouter.post("/verify-email", async(req, res) => {
     return buildErrorResponse(res, "Account Cannot be verified")
   }
 })
+
+userRouter.post("/login", async(req, res) => {
+  try {
+    const { email, password } = req.body
+
+    // Find user by email
+    const user = await findUserByEmail(email)
+
+    // return error if user is not found or user is not verified
+    if(!user?._id){
+      return buildErrorResponse(res, "User account does not exist!")
+    }
+
+    if(!user?.isVerified){
+      return buildErrorResponse(res, "User is not verified")
+    }
+
+    if(user?.role !== "admin"){
+      return buildErrorResponse(res, "You are not authorized to access this app")
+    }
+    // Compare password
+    const isPasswordMatched = comparePassword(password, user.password)
+    // Generate and send back tokens
+
+    if(isPasswordMatched){
+      const jwt = await generateJWTs(user.email)
+
+      return buildSuccessResponse(res, jwt, "Logged in Successfully")
+    }
+
+    return buildErrorResponse(res, "Invalid Credentials")
+  } catch (error) {
+    buildErrorResponse(res, "Invalid Credentials")
+  }
+})
+
+// PRIBVATE ROUTES
+userRouter.get("/", adminAuth, async(req, res) => {
+  try {
+    buildSuccessResponse(res, req.userInfo, "User Info")
+  } catch (error) {
+    buildErrorResponse(res, error.message)
+  }
+})
+
+
+// GET NEW ACCESS TOKEN
+userRouter.get("/accessjwt", refreshAuth)
 
 export default userRouter
