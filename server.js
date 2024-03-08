@@ -15,8 +15,10 @@ connectToMongoDb()
 
 // Routes
 import userRouter from "./routers/userRouter.js"
+import categoryRouter from "./routers/categoryRouter.js"
 
 app.use("/api/user", userRouter)
+app.use("/api/category", categoryRouter)
 // Run the server
 app.listen(PORT, (error) => {
   error ? console.log("Error", error) : console.log("Server is running at port", PORT)
