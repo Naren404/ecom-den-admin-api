@@ -13,6 +13,12 @@ app.use(express.json())
 // Connect to Database
 connectToMongoDb()
 
+// Serve Images
+import path from "path";
+const __dirname = path.resolve();
+
+app.use(express.static(path.join(__dirname, "/public")));
+
 // Routes
 import userRouter from "./routers/userRouter.js"
 import categoryRouter from "./routers/categoryRouter.js"
