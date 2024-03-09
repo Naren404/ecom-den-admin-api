@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, getProducts } from "../models/product/productModel.js";
+import { createProduct, getProducts, updateproduct } from "../models/product/productModel.js";
 import { buildErrorResponse, buildSuccessResponse } from "../utility/responseHelper.js";
 import { productImageUploader } from "../middlewares/imageUploaders/productImageUploader.js";
 import slugify from "slugify";
@@ -41,6 +41,28 @@ productRouter.post("/", productImageUploader.single("image"),async(req, res) => 
       : buildErrorResponse(res, "Could not create the product!")
   } catch (error) {
     buildErrorResponse(res, "Could not create the product!")
+  }
+})
+
+// UPDATE
+productRouter.patch("/", productImageUploader.single("image"), async(req, res) => {
+  try {
+    // get the file path where it was uploaded and store inthe db
+    if(req.file) {
+      req.body.thumbnail = req.file.path.slice(6) 
+    }
+    
+    const { thumbnail, ...filteredBody } = req.body;
+
+    const updatedProduct = req.file ? req.body : filteredBody
+
+    const product = await updateproduct(updatedProduct)
+
+    product?._id
+      ? buildSuccessResponse(res, product, "Product Updated Successfully.")
+      : buildErrorResponse(res, "Could not update the product!")
+  } catch (error) {
+    console.log("Error", error.message);
   }
 })
 
