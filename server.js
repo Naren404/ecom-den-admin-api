@@ -22,9 +22,11 @@ app.use(express.static(path.join(__dirname, "/public")));
 // Routes
 import userRouter from "./routers/userRouter.js"
 import categoryRouter from "./routers/categoryRouter.js"
+import productRouter from "./routers/productRouter.js"
 
 app.use("/api/user", userRouter)
 app.use("/api/category", categoryRouter)
+app.use("/api/product", productRouter)
 // Run the server
 app.listen(PORT, (error) => {
   error ? console.log("Error", error) : console.log("Server is running at port", PORT)
