@@ -21,3 +21,8 @@ export const findUserById = (id) => {
 export const updateUser = (filter, updatedUser) => {
   return userSchema.findOneAndUpdate(filter, updatedUser, { new: true });
 };
+
+// update users referesh token
+export const updateRefreshJWT = (email, refreshJWT) => {
+  return userSchema.findOneAndUpdate({ email }, { refreshJWT })
+}

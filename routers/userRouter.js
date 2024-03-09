@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { newUserValidation } from "../middlewares/validationMiddleware/userValidation.js";
 import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
-import { createUser, findUserByEmail, updateUser } from "../models/user/userModel.js";
+import { createUser, findUserByEmail, updateRefreshJWT, updateUser } from "../models/user/userModel.js";
 import { createSession, deleteSession } from "../models/session/sessionModel.js";
 import { sendAccountVerifiedEmail, sendVerificationLinkEmail } from "../utility/nodemailerHelper.js";
 import { buildErrorResponse, buildSuccessResponse } from "../utility/responseHelper.js";
@@ -132,4 +132,20 @@ userRouter.get("/", adminAuth, async(req, res) => {
 // GET NEW ACCESS TOKEN
 userRouter.get("/accessjwt", refreshAuth)
 
+//LOGOUT USER
+userRouter.post("/logout", async(req, res)=> {
+  try {
+    const { email, accessJWT } = req.body
+
+    //remove session for the user
+    await deleteSession(accessJWT)
+
+    // update[remove] refreshJWT for the user
+    await updateRefreshJWT(email, "")
+
+    buildSuccessResponse(res, {}, "Bye, See you again!!")
+  } catch (error) {
+    buildErrorResponse(res, error.message)
+  }
+})
 export default userRouter
