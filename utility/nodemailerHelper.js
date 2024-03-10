@@ -79,3 +79,60 @@ export const sendAccountVerifiedEmail = (user, loginUrl) => {
   sendEmail(emailFormat)
 }
 
+export const sendOtpEmail = (user, otp) => {
+  const { email, firstName, lastName } = user
+
+  const emailFormat = {
+    from: `Eco Den<${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "OTP For password reset",
+    html: `
+    <table style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; border-collapse: collapse;">
+        <tr>
+            <td style="text-align: center;">
+                <h1>OTP FOR PASSWORD RESET</h1>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Dear ${firstName + ' ' + lastName},</p>
+                <p>Please use OTP provided below to reset you password.</p>
+                <p style="font-size:3rem; font-weight:bold;">${otp}</p>
+                <p>Thank you,<br> ECOM DEN</p>
+            </td>
+        </tr>
+    </table>
+    `
+  }
+
+  sendEmail(emailFormat)
+}
+
+export const passwordUpdatedNotificationEmail = (user) => {
+  const { email, firstName, lastName } = user
+
+  const emailFormat = {
+    from: `Eco Den<${process.env.SMTP_USER}>`,
+    to: email,
+    subject: "Password Updated",
+    html: `
+    <table style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; border-collapse: collapse;">
+        <tr>
+            <td style="text-align: center;">
+                <h1>Password Updated</h1>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Dear ${firstName + ' ' + lastName},</p>
+                <p>Your password has been successfully updated. You can now login to our application.</p>
+                <p>If you did not make this change, please contact our administrator.</p>
+                <p>Thank you,<br> ECO DEN</p>
+            </td>
+        </tr>
+    </table>
+    `
+  }
+
+  sendEmail(emailFormat)
+}
