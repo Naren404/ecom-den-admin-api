@@ -1,11 +1,12 @@
 import express from "express";
 import { v4 as uuidv4 } from 'uuid';
+import { otpGen } from "otp-gen-agent"
 
 import { newUserValidation } from "../middlewares/validationMiddleware/userValidation.js";
 import { comparePassword, hashPassword } from "../utility/bcryptHelper.js";
 import { createUser, findUserByEmail, updateRefreshJWT, updateUser } from "../models/user/userModel.js";
 import { createSession, deleteSession } from "../models/session/sessionModel.js";
-import { sendAccountVerifiedEmail, sendVerificationLinkEmail } from "../utility/nodemailerHelper.js";
+import { passwordUpdatedNotificationEmail, sendAccountVerifiedEmail, sendOtpEmail, sendVerificationLinkEmail } from "../utility/nodemailerHelper.js";
 import { buildErrorResponse, buildSuccessResponse } from "../utility/responseHelper.js";
 import { generateJWTs } from "../utility/jwtHelper.js";
 import { adminAuth, refreshAuth } from "../middlewares/authMiddleware/authMiddleware.js";
@@ -148,4 +149,61 @@ userRouter.post("/logout", async(req, res)=> {
     buildErrorResponse(res, error.message)
   }
 })
+
+// SEND OTP TO USER
+userRouter.post("/request-otp", async(req, res) => {
+  try {
+    const { email } = req.body
+
+    // find user by email
+    const user = await findUserByEmail(email)
+
+    if(user?._id){
+      // generate otp
+      const otp = await otpGen()
+
+      // create session for that OTP and email
+      const session = await createSession({ token: otp, userEmail: email })
+
+      if(session?._id){
+        // send otp email
+        sendOtpEmail(user, otp)
+      }
+      return buildSuccessResponse(res, [], "If your email is registered in our system, an OTP will be sent to your email address. Kindly ensure to check your Junk/Spam folder as well.")
+    }
+
+    buildErrorResponse(res, "Could not send OTP, please try again later")
+  } catch (error) {
+    buildErrorResponse(res, "Could not send OTP, please try again later")
+  }
+})
+
+// RESET PASSWORD
+userRouter.patch("/reset-password", async(req, res) => {
+  try {
+    const { otp, email, password } = req.body
+    // Check if otp and email exist in session
+    const session = await deleteSession({ token: otp, userEmail: email })
+
+    if(session?._id){
+      // hash the password
+      const hashedPassword = hashPassword(password)
+
+      // update user password
+      const user = await updateUser({ email }, { password: hashedPassword })
+
+      if(user?._id){
+        // send email saying you password was reset
+        passwordUpdatedNotificationEmail(user)
+
+        return buildSuccessResponse(res, [], "Your password has been udpated, you may login now!")
+      }
+    }
+
+    buildErrorResponse(res, "Invalid OTP, try again later")
+  } catch (error) {
+    buildErrorResponse(res, "Invalid OTP, try again later")
+  }
+})
+
 export default userRouter
